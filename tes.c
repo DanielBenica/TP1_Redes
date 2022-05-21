@@ -40,36 +40,79 @@ char *ConcatInteger(int *ids){
 
 }
 
+char *ConcatFloat(float *ids){
+    //count the number of ids diferrent from 0
+    int count = 0;
+    for(int i = 0; i < MAXEQUIPAMENTOS; i++){
+        if(ids[i] != 0){
+            count++;
+        }
+    }
+
+    //create a string with the ids
+    char *str = malloc(sizeof(char) * BUFSIZE);
+    
+    switch(count){
+        case 1:
+            sprintf(str, "%.2f", ids[0]);
+            break;
+        case 2:
+            sprintf(str, "%.2f %.2f", ids[0], ids[1]);
+            break;
+        case 3:
+            sprintf(str, "%.2f %.2f %.2f", ids[0], ids[1], ids[2]);
+            break;
+        case 4:
+            sprintf(str, "%.2f %.2f %.2f %.2f", ids[0], ids[1], ids[2], ids[3]);
+            break;
+    }
+    return str;
+
+}
+
 
 int removeSensor(int equipamento, int sensor){
-    if(Equipamento[equipamento][sensor] != 0){
-        Equipamento[equipamento][sensor] = 0;
+    --equipamento;
+    int index = sensor -1;
+    if(Equipamento[equipamento][index] != 0){
+        Equipamento[equipamento][index] = 0;
         printf("sensor %d removed\n", sensor);
         return 1;
     }
     else if (sensor!=0){
-        printf("sensor 0%d does not exist in 0%d\n", sensor, equipamento);
+        printf("sensor 0%d does not exist in 0%d\n", sensor, equipamento+1);
     }
     return 0;
 }
 
-float readSensor(int equipamento, int sensor){
-     if(Equipamento[equipamento][sensor] != 0){
-        return  (float)rand()/(float)(RAND_MAX/50);
+float *readSensor(int equipamento, int *sensor){
+    printf("dasdsadasdas\n");
+    float sensorList[MAXSENSORES] = {0,0,0,0};
+    int i=0;
+    for(i=0; i<MAXSENSORES; i++){
+     if(Equipamento[equipamento][sensor[i]] != 0){
+        sensorList[i]=(float)rand()/(float)(RAND_MAX/50);
     }
-    return 0;
+    else if(sensor[i]!=0){
+        printf("sensor 0%d does not exist in 0%d\n", sensor[i], equipamento);
+        return 0;
+    }
+        }
+   // return sensorList;
 }
 
 int readEquipamento(int i){
+    --i;
     int ListaSensores[MAXSENSORES] = {0,0,0,0};
     char *response = malloc(sizeof(char)*BUFSIZE);
     for(int j = 0; j < MAXSENSORES; j++){
         if(Equipamento[i][j] != 0){
             ListaSensores[j] = Equipamento[i][j];
         }
-        else{
-            printf("Equipamento não instalado");
-        }
+    }
+
+    if(ListaSensores[0]==0){
+        printf("No sensors in 0%d", i+1);
     }
 
     response = ConcatInteger(ListaSensores);
@@ -77,7 +120,7 @@ int readEquipamento(int i){
     return 1;
 }
 
-void print_equipamentos(int *numbers){
+void print_equipamentos(){
     int i,j;
     for(i=0;i<MAXEQUIPAMENTOS;i++){
         for(j=0;j<MAXSENSORES;j++){
@@ -87,16 +130,16 @@ void print_equipamentos(int *numbers){
     }
 }
 
-
-
 int addSensor(int equipamento, int sensor){
     int addedSens[4]={0,0,0,0};
-    if(Equipamento[equipamento][sensor] == 0 && sensor!=0){
-        Equipamento[equipamento][sensor] = sensor;
+    --equipamento;
+    int index = sensor -1;
+    if(Equipamento[equipamento][index] == 0 && sensor!=0){
+        Equipamento[equipamento][index] = sensor;
         return sensor;
     }
     else if(sensor != 0){
-        printf("sensor %d already installed\n", sensor);
+        printf("sensor 0%d already exists in 0%d\n", sensor, equipamento+1);
         return 0;
     }
 
@@ -161,7 +204,9 @@ void handleAdd(char *Input){
     }
 
     response = ConcatInteger(addedSensors);
-    printf("sensor %s added\n", response);	
+    if(addedSensors[0]!=0){
+        printf("sensor %s added\n", response);	
+    }
 
 }
 
@@ -194,7 +239,8 @@ void handleRead(char *Input){
     char *token;
     int ids[4] = {0,0,0,0};
     int i=0;
-    int *response = malloc(sizeof(int)*4);
+    float *ListValues = malloc(sizeof(int)*4);
+    char *response = malloc(sizeof(char)*BUFSIZE);
     token = strtok(Input, " ");
     token = strtok(NULL, " "); // para pular o comando
     while(strcmp(token,"in")!=0){
@@ -210,12 +256,12 @@ void handleRead(char *Input){
         printf("sensor %d does not exist in %d\n",ids[0],NrEquipamento);
     }
     else{
-        for(i=0;i<4;i++){
-            response[i] = readSensor(NrEquipamento,ids[i]);
-        }
+        ListValues = readSensor(NrEquipamento,ids);
     }
+    response = ConcatFloat(ListValues);
+    printf("%s\n", response);
     //print response
-    printf("%d %d %d %d\n",response[0],response[1],response[2],response[3]);
+   
 }
 
 void handleList(char *Input){
@@ -225,6 +271,7 @@ void handleList(char *Input){
     token = strtok(NULL, " "); // para pular o comando
 
     //extraçao do nr de equipamento da sttring de entrada
+    token = strtok(NULL, " ");
     token = strtok(NULL, " ");
     int NrEquipamento = atoi(token);
 
@@ -241,14 +288,17 @@ void handleList(char *Input){
 int main(int argc, char **argv){
     int a;
     int mode;
+    int contador = 0;
 
     //esvazia a matriz
     memset(Equipamento,0,sizeof(Equipamento));
 
-
+    
     //Cria o vetor para armazenar a leitura do cliente
     char buf[BUFSIZE];
     char buf2[BUFSIZE];
+
+    while(contador<3){
     memset(buf, 0, BUFSIZE);
     fgets(buf, BUFSIZE, stdin);
     strcpy(buf2,buf);
@@ -271,7 +321,9 @@ int main(int argc, char **argv){
             printf("Invalid command\n");
             break;
     }
-  
+  contador++;
+  print_equipamentos();
+}
 
 return 1;
 }
