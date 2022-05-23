@@ -95,57 +95,48 @@ int removeSensor(int equipamento, int sensor){
     return 0;
 }
 
-float readSensor(int equipamento, int *sensor){
+char * readSensor(int equipamento, int *sensor){
     --equipamento;
-    int i=0,j=0,k=0,l=0;
+    int i=0,j=0,k=0,l=0,m=0;
     int NonExistent[MAXSENSORES]={0,0,0,0};
     int flag = 0;
     float ValorSensores[MAXSENSORES]={0,0,0,0};
     char *response = malloc(sizeof(char) * BUFSIZE);
+    char *response2 = malloc(sizeof(char) * BUFSIZE);
     char *failedSensors = malloc(sizeof(char) * BUFSIZE);
+
+    //imprime sensor
 
     for(i = 0; i < MAXSENSORES; i++){
         for(j=0;j< MAXSENSORES;j++){
             if(Equipamento[equipamento][j] == sensor[i] && sensor[i]!=0){
                 ValorSensores[k] = (float)rand()/(float)(RAND_MAX/50);
                 k++;
+                m++;
             }
         }
-        if(k == 0){
+        if(m == 0){
             flag = 1;
             NonExistent[l] = sensor[i];
             l++;
         }
-        k=0;
+        m=0;
     }
 
-    //imprime valores dos sensores
-    for(i = 0; i < MAXSENSORES; i++){
-        if(ValorSensores[i] != 0){
-            printf("sensor %d: %.2f\n", i+1, ValorSensores[i]);
-        }
+    //verificamos se houve erros ou não
+    if(NonExistent[0]!=0){
+        response = ConcatInteger(NonExistent);
+        sprintf(response2, "sensor %s does not exist in 0%d", response, equipamento+1);
+        return response2;
     }
-
-    //imprime sensores nao existentes
-    for(i = 0; i < MAXSENSORES; i++){
-        if(NonExistent[i] != 0){
-            printf("sensor 0%d does not exist \n", NonExistent[i]);
-        }
-    }
-
-    if(flag==1 && NonExistent[0]!=0){
-        //chamar funçao para imprimir os erros
-        failedSensors = ConcatInteger(NonExistent);
-        sprintf(response, "sensor %s does not exist in 0%d", failedSensors, equipamento+1);
-        printf("%s\n", response);
-    }
-    else{
+    else if(ValorSensores[0]!=0){
         response = ConcatFloat(ValorSensores);
-        printf("sensor %s in 0%d = %s\n", ConcatInteger(sensor), equipamento+1, response);
+        return response;
     }
 
 
-    }
+
+}
 
 
 int readEquipamento(int i){
@@ -319,7 +310,8 @@ void handleRead(char *Input){
     if(NrEquipamento>MAXEQUIPAMENTOS){
         printf("Equipamento não existe\n");
     }
-    readSensor(NrEquipamento,ids);
+    response = readSensor(NrEquipamento,ids);
+    printf("%s\n", response);
     
     // response = ConcatFloat(ListValues);
     // printf("%s\n", response);
