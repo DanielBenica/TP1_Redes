@@ -177,18 +177,38 @@ void print_equipamentos(){
     }
 }
 
-int addSensor(int equipamento, int sensor){
+char * addSensor(int equipamento, int *sensor){
     int addedSens[4]={0,0,0,0};
+    int failedSens[4] = {0,0,0,0};
+    char *response2 = malloc(sizeof(char) * BUFSIZE);
+    char *response = malloc(sizeof(char) * BUFSIZE);
     --equipamento;
-    int index = sensor -1;
-    if(Equipamento[equipamento][index] == 0 && sensor!=0){
-        Equipamento[equipamento][index] = sensor;
-        return sensor;
+    int j = 0,k=0;
+    for(int i=0;i<MAXSENSORES;i++){
+        if(Equipamento[equipamento][i] == 0 && sensor!=0){
+            Equipamento[equipamento][i] = sensor[i];
+            addedSens[k] = sensor[i];
+            k++;
+        }
+        else if(sensor[i]!=0 && Equipamento[equipamento][i]==sensor[i]){
+            failedSens[j] = sensor[i];
+            j++;
+        }
     }
-    else if(sensor != 0){
-        printf("sensor 0%d already exists in 0%d\n", sensor, equipamento+1);
-        return 0;
+
+    //verificamos se houve erros ou não
+    if(failedSens[0]!=0){
+        response = ConcatInteger(failedSens);
+        sprintf(response2, "sensor %s already exists in 0%d", response, equipamento+1);
+        return response2;
     }
+    else if(addedSens[0]!=0){
+        response = ConcatInteger(addedSens);
+        sprintf(response2, "sensor %s added to 0%d", response, equipamento+1);
+        return response2;
+    }
+
+
 
 }
 
@@ -220,7 +240,7 @@ int handleMode(char *Input){
 void handleAdd(char *Input){
     char *token;
     int ids[4] = {0,0,0,0};
-    int addedSensors[4]={0,0,0,0};
+    char *addedSensors = malloc(sizeof(char) * BUFSIZE);
     char *response = malloc(sizeof(char)*BUFSIZE);
 
     int i=0;
@@ -245,15 +265,10 @@ void handleAdd(char *Input){
         printf("Equipamento não existe\n");
     }
     else{
-        for(int j=0;j<size;j++){
-            addedSensors[j]=addSensor(NrEquipamento,ids[j]);
-        }
+        response=addSensor(NrEquipamento,ids);
     }
 
-    response = ConcatInteger(addedSensors);
-    if(addedSensors[0]!=0){
-        printf("sensor %s added\n", response);	
-    }
+    printf("%s\n", response);
 
 }
 
